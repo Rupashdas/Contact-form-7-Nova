@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name:       CF7 Nova Lite - OLD
+ * Plugin Name:       CF7 Nova Lite
  * Plugin URI:        https://example.com/cf7-nova
  * Description:       The missing modern layer for Contact Form 7 — visual builder, multi-step, submissions DB, conditional logic, and more. Free.
  * Version:           2.0.0-dev
