@@ -1,0 +1,14 @@
+# Generated and vendored content — never touch.
+build/
+node_modules/
+vendor/
+languages/
+*.min.js
+*.min.css
+
+# Lockfiles — let the package manager own these.
+composer.lock
+package-lock.json
+
+# PHP — Prettier doesn't format PHP; PHPCBF handles it.
+*.php
