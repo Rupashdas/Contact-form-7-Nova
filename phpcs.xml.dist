@@ -1,0 +1,63 @@
+<?xml version="1.0"?>
+<ruleset name="CF7 Nova Lite">
+	<description>PHP_CodeSniffer ruleset for CF7 Nova Lite — extends WordPress-Extra with project-specific tweaks.</description>
+
+	<!--
+		Scan the whole plugin by default. Composer's vendor/ and the JS build
+		output never need PHPCS attention; the asset folder may hold static
+		files we don't want flagged either.
+	-->
+	<file>.</file>
+	<exclude-pattern>*/vendor/*</exclude-pattern>
+	<exclude-pattern>*/node_modules/*</exclude-pattern>
+	<exclude-pattern>*/build/*</exclude-pattern>
+	<exclude-pattern>*/languages/*</exclude-pattern>
+
+	<!--
+		Performance & UX flags:
+		- p  : show progress
+		- s  : show sniff codes so we know which rule to silence/fix
+		- v  : verbose
+		- colors : nicer console output
+	-->
+	<arg value="psv"/>
+	<arg name="colors"/>
+	<arg name="extensions" value="php"/>
+	<arg name="parallel" value="8"/>
+
+	<!--
+		Base ruleset. "WordPress" pulls in Extra + Core + Docs + VIP-go subset.
+		We start strict and silence specific rules below as the project grows.
+	-->
+	<rule ref="WordPress"/>
+
+	<!--
+		Tell WordPress sniffs about our text domain and prefixes so they can
+		flag missing i18n and namespace collisions.
+	-->
+	<rule ref="WordPress.WP.I18n">
+		<properties>
+			<property name="text_domain" type="array">
+				<element value="cf7-nova-lite"/>
+			</property>
+		</properties>
+	</rule>
+
+	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
+		<properties>
+			<property name="prefixes" type="array">
+				<element value="cf7nl"/>
+				<element value="CF7NL"/>
+			</property>
+		</properties>
+	</rule>
+
+	<!--
+		Minimum PHP and WordPress versions the codebase has to stay compatible
+		with. PHPCompatibility uses these to surface forward-incompatible APIs.
+	-->
+	<config name="minimum_supported_wp_version" value="6.0"/>
+	<config name="testVersion" value="8.0-"/>
+
+	<rule ref="PHPCompatibilityWP"/>
+</ruleset>

@@ -1,0 +1,31 @@
+# EditorConfig keeps formatting consistent across IDEs (VS Code, PhpStorm,
+# Sublime, vim) without committing each editor's own settings file.
+# Docs: https://editorconfig.org
+
+root = true
+
+# --- Defaults --------------------------------------------------------------
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = tab
+indent_size = 4
+
+# --- PHP / JS / CSS — WordPress core convention ---------------------------
+# WordPress Coding Standards mandate tabs. Keep this aligned with phpcs.xml.
+[*.{php,js,jsx,ts,tsx,css,scss}]
+indent_style = tab
+indent_size = 4
+
+# --- JSON / YAML / Markdown — community convention uses spaces ------------
+[*.{json,yml,yaml,md}]
+indent_style = space
+indent_size = 2
+
+# --- Composer / package lock files -----------------------------------------
+# Auto-generated. Keep formatter from rewriting them.
+[{composer.lock,package-lock.json}]
+trim_trailing_whitespace = false
+insert_final_newline = false

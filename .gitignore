@@ -1,0 +1,32 @@
+# --- Dependencies ----------------------------------------------------------
+# Composer and npm install into these. Never committed — every fresh clone
+# regenerates them from the lockfile.
+/vendor/
+/node_modules/
+
+# --- Build artifacts -------------------------------------------------------
+# Vite writes hashed bundles into /build/ for production. Generated, not
+# tracked. WP.org distribution build will regenerate this folder.
+/build/
+*.log
+
+# --- Local-only config -----------------------------------------------------
+# Per-machine overrides for PHPCS/PHPStan that should never leak into other
+# environments.
+phpcs.xml
+phpstan.neon
+.phpcs.cache
+.phpunit.result.cache
+
+# --- OS / Editor cruft -----------------------------------------------------
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# --- WordPress local Studio noise -----------------------------------------
+# Local by Flywheel and friends sometimes drop temp files in plugin folders.
+*.tmp

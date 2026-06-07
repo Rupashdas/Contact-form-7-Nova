@@ -1,0 +1,29 @@
+parameters:
+    # Level 6 is a sensible starting point for a new WordPress plugin: it
+    # catches missing type hints and undefined methods without drowning the
+    # team in noise from WP core's loose typing. Raise to 8 once src/ matures.
+    level: 6
+
+    # Code we own. Tests are scanned separately so plugin code stays clean
+    # even when fixtures use looser types.
+    paths:
+        - src
+
+    # PHP version target. Must match composer.json "platform.php" so PHPStan
+    # does not assume features unavailable on shared hosts.
+    phpVersion: 80000
+
+    # Never scan dependencies or build artifacts.
+    excludePaths:
+        - vendor
+        - node_modules
+        - build
+
+    # Most WP function signatures are partial; ignore the noisier patterns so
+    # real issues stand out. Tighten as the codebase converges on real types.
+    treatPhpDocTypesAsCertain: false
+
+includes:
+    # WordPress-aware stubs (WP core, CF7) so PHPStan understands global
+    # functions, $wpdb, hooks, etc. Pulled in by szepeviktor/phpstan-wordpress.
+    - vendor/szepeviktor/phpstan-wordpress/extension.neon
