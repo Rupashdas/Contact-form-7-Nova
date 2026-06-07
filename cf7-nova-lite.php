@@ -35,85 +35,124 @@ defined( 'ABSPATH' ) || exit;
  * core, Contact Form 7, or any third-party plugin.
  */
 
-/**
- * Human-facing plugin version. Bump on every release (semver).
- *
- * @var string
- */
+/** @var string Human-facing plugin version. Bump on every release (semver). */
 define( 'CF7NL_VERSION', '2.0.0-dev' );
 
-/**
- * Database schema version. Incremented only when the schema actually changes,
- * so the Schema installer can run targeted migrations (Phase 2).
- *
- * @var string
- */
+/** @var string Database schema version. Bump only when the schema changes. */
 define( 'CF7NL_DB_VERSION', '1' );
 
-/**
- * Absolute path to this main plugin file. Used by `plugin_basename()`,
- * `register_activation_hook()`, and translation loaders.
- *
- * @var string
- */
+/** @var string Absolute path to this main plugin file. */
 define( 'CF7NL_FILE', __FILE__ );
 
-/**
- * Filesystem path to the plugin root, with trailing slash. Use for `require`
- * and template loads. Never expose this to the front-end.
- *
- * @var string
- */
+/** @var string Filesystem path to the plugin root, trailing slash. */
 define( 'CF7NL_PATH', plugin_dir_path( __FILE__ ) );
 
-/**
- * Public URL to the plugin root, with trailing slash. Use for asset URLs in
- * enqueue calls.
- *
- * @var string
- */
+/** @var string Public URL to the plugin root, trailing slash. */
 define( 'CF7NL_URL', plugin_dir_url( __FILE__ ) );
 
-/**
- * Plugin basename, e.g. "cf7-nova-lite/cf7-nova-lite.php". Required for
- * activation hooks and the `plugin_action_links_{$basename}` filter.
- *
- * @var string
- */
+/** @var string Plugin basename, e.g. "cf7-nova-lite/cf7-nova-lite.php". */
 define( 'CF7NL_BASENAME', plugin_basename( __FILE__ ) );
 
-/**
- * Plugin slug used for menu pages, capabilities, and asset handles.
- *
- * @var string
- */
+/** @var string Plugin slug used for menu pages, capabilities, and asset handles. */
 define( 'CF7NL_SLUG', 'cf7-nova-lite' );
 
-/**
- * Text domain for translations. Must match the `Text Domain` header above and
- * the directory name passed to `load_plugin_textdomain()`.
- *
- * @var string
- */
+/** @var string Text domain for translations — must match the header above. */
 define( 'CF7NL_TEXT_DOMAIN', 'cf7-nova-lite' );
+
+/*
+ * -----------------------------------------------------------------------------
+ * Autoloader
+ * -----------------------------------------------------------------------------
+ * PSR-4 mapping for `CF7NL\` → `src/`. Implemented inline so the plugin works
+ * without `composer install` — the WP.org distribution does not ship vendor/.
+ *
+ * Composer's autoloader is loaded too, but only if vendor/ exists, so dev
+ * tooling (PHPUnit) still resolves classes the same way.
+ *
+ *   Example:  CF7NL\Core\Plugin             → src/Core/Plugin.php
+ *             CF7NL\Modules\Submissions\Module → src/Modules/Submissions/Module.php
+ */
+spl_autoload_register(
+	static function ( string $class ): void {
+		// Bail fast on unrelated classes — autoloaders run on every class touch.
+		if ( 0 !== strpos( $class, 'CF7NL\\' ) ) {
+			return;
+		}
+
+		// Strip the namespace prefix, then convert `\` to the OS path separator.
+		$relative = substr( $class, strlen( 'CF7NL\\' ) );
+		$path     = CF7NL_PATH . 'src' . DIRECTORY_SEPARATOR
+			. str_replace( '\\', DIRECTORY_SEPARATOR, $relative ) . '.php';
+
+		// `is_readable` covers existence + permission in one syscall.
+		if ( is_readable( $path ) ) {
+			require_once $path;
+		}
+	}
+);
+
+// Optional Composer autoload — only if dev dependencies are installed.
+if ( is_readable( CF7NL_PATH . 'vendor/autoload.php' ) ) {
+	require_once CF7NL_PATH . 'vendor/autoload.php';
+}
+
+/*
+ * -----------------------------------------------------------------------------
+ * Contact Form 7 dependency check
+ * -----------------------------------------------------------------------------
+ * Contact Form 7 is a hard requirement. Without it every hook we register is
+ * a no-op, so it is friendlier to refuse to boot and show an admin notice
+ * than to silently misbehave.
+ *
+ * The check runs late (on `plugins_loaded` priority 10) so CF7 has had its own
+ * chance to load. We can't check at file-include time — that runs before
+ * other plugins have been required.
+ */
+
+/**
+ * Detect whether Contact Form 7 is loaded.
+ *
+ * @return bool True when CF7 is active and reachable.
+ */
+function cf7nl_is_cf7_active(): bool {
+	return defined( 'WPCF7_VERSION' ) || class_exists( 'WPCF7' );
+}
+
+/**
+ * Render an admin notice asking the user to install/activate Contact Form 7.
+ *
+ * Hooked from cf7nl_boot() only when CF7 is missing, so it is never shown
+ * to users who have a healthy install.
+ */
+function cf7nl_render_cf7_missing_notice(): void {
+	if ( ! current_user_can( 'activate_plugins' ) ) {
+		return;
+	}
+	printf(
+		'<div class="notice notice-error"><p>%s</p></div>',
+		esc_html__(
+			'CF7 Nova Lite requires Contact Form 7. Please install and activate it.',
+			'cf7-nova-lite'
+		)
+	);
+}
 
 /*
  * -----------------------------------------------------------------------------
  * Boot
  * -----------------------------------------------------------------------------
- * The real bootstrap (autoloader, dependency check, service container, module
- * manager) lands in Phase 1 inside \CF7NL\Core\Plugin. This stub exists so the
- * plugin is activatable today and the activation/deactivation lifecycle can be
- * verified before any real code ships.
+ * Priority 5 lets us check CF7 immediately after WordPress core finishes
+ * loading. CF7 itself initializes on `plugins_loaded` priority 10, so by the
+ * time the bootstrapping action body runs, CF7's classes are already declared.
  *
- * Priority 5 runs before most third-party plugins on `plugins_loaded` but
- * after WordPress core has finished loading. Contact Form 7 declares its
- * classes at priority 10, so a CF7-presence check belongs at 10+, not here.
+ * Phase 1: this stub will hand control to \CF7NL\Core\Plugin::instance()->boot().
  */
-add_action(
-	'plugins_loaded',
-	static function (): void {
-		// Phase 1: \CF7NL\Core\Plugin::instance()->boot();
-	},
-	5
-);
+function cf7nl_boot(): void {
+	if ( ! cf7nl_is_cf7_active() ) {
+		add_action( 'admin_notices', 'cf7nl_render_cf7_missing_notice' );
+		return;
+	}
+
+	// Phase 1.5: \CF7NL\Core\Plugin::instance()->boot();
+}
+add_action( 'plugins_loaded', 'cf7nl_boot', 5 );
