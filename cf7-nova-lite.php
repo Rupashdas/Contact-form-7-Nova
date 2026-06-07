@@ -1,11 +1,12 @@
 <?php
 /**
- * Plugin Name:       CF7 Nova Lite
+ * Plugin Name:       CF7 Nova Lite - OLD
  * Plugin URI:        https://example.com/cf7-nova
  * Description:       The missing modern layer for Contact Form 7 — visual builder, multi-step, submissions DB, conditional logic, and more. Free.
  * Version:           2.0.0-dev
- * Requires at least: 6.0
+ * Requires at least: 6.5
  * Requires PHP:      8.0
+ * Requires Plugins:  contact-form-7
  * Author:            Rupash Das
  * Author URI:        https://example.com
  * License:           GPL-2.0-or-later
@@ -100,13 +101,17 @@ if ( is_readable( CF7NL_PATH . 'vendor/autoload.php' ) ) {
  * -----------------------------------------------------------------------------
  * Contact Form 7 dependency check
  * -----------------------------------------------------------------------------
- * Contact Form 7 is a hard requirement. Without it every hook we register is
- * a no-op, so it is friendlier to refuse to boot and show an admin notice
- * than to silently misbehave.
+ * Contact Form 7 is a hard requirement.
  *
- * The check runs late (on `plugins_loaded` priority 10) so CF7 has had its own
- * chance to load. We can't check at file-include time — that runs before
- * other plugins have been required.
+ * Activation gating is handled by the `Requires Plugins: contact-form-7`
+ * header above — WordPress 6.5+ will refuse to enable the Activate link
+ * until CF7 is installed and active, mirroring how plugins like "AntiSpam
+ * for Contact Form 7" behave.
+ *
+ * The runtime check below is the second line of defence: a user can still
+ * deactivate CF7 *after* Nova is active, and on WP < 6.5 the header is a
+ * silent no-op. Either way we refuse to boot and surface an admin notice
+ * instead of letting every hook misfire.
  */
 
 /**
@@ -141,9 +146,10 @@ function cf7nl_render_cf7_missing_notice(): void {
  * -----------------------------------------------------------------------------
  * Boot
  * -----------------------------------------------------------------------------
- * Priority 5 lets us check CF7 immediately after WordPress core finishes
- * loading. CF7 itself initializes on `plugins_loaded` priority 10, so by the
- * time the bootstrapping action body runs, CF7's classes are already declared.
+ * Priority 5 runs after WordPress core has finished loading plugin files but
+ * before most third-party `plugins_loaded` callbacks. CF7 itself declares its
+ * classes at file-include time, so its `WPCF7_VERSION` constant is already
+ * defined by the time this callback fires — the check below is reliable.
  *
  * Phase 1: this stub will hand control to \CF7NL\Core\Plugin::instance()->boot().
  */

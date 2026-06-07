@@ -1,7 +1,8 @@
 === CF7 Nova Lite ===
 Contributors: rupashdas
 Tags: contact form 7, form builder, multi-step form, submissions, conditional logic
-Requires at least: 6.0
+Requires at least: 6.5
+Requires Plugins: contact-form-7
 Tested up to: 6.5
 Requires PHP: 8.0
 Stable tag: 2.0.0-dev
